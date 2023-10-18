@@ -1,0 +1,32 @@
+_BASE_: [
+  '../datasets/defect.yml',
+  '../runtime.yml',
+  './_base_/optimizer_80e.yml',
+  './_base_/ppyoloe_plus_crn.yml',
+  './_base_/ppyoloe_plus_reader.yml',
+]
+
+log_iter: 100
+snapshot_epoch: 5
+weights: utput/ppyoloe_l_80e_defect/best_model
+
+pretrain_weights: https://bj.bcebos.com/v1/paddledet/models/pretrained/ppyoloe_crn_l_obj365_pretrained.pdparams
+depth_mult: 1.0
+width_mult: 1.0
+
+epoch: 100
+
+TrainReader:
+  batch_size: 8
+
+EvalReader:
+  batch_size: 8
+
+#EvalReader:
+#  batch_size: 1
+#  sample_transforms:
+#    - Decode: {}
+##    - Resize: {target_size: [800, 800], keep_ratio: False, interp: 2}
+#    - MultiscaleTestResize: {origin_target_size: [640, 640], target_size: [[640, 640],[800, 800]], use_flip: False}
+#    - NormalizeImage: {mean: [0., 0., 0.], std: [1., 1., 1.], norm_type: none}
+#    - Permute: {}
