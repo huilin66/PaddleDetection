@@ -6,7 +6,7 @@ _BASE_: [
   './_base_/ppyoloe_plus_reader.yml',
 ]
 
-log_iter: 100
+log_iter: 20
 snapshot_epoch: 5
 weights: output/ppyoloe_l_80e_defect_prompt/best_model
 
@@ -28,10 +28,10 @@ LearningRate:
 YOLOv3:
   backbone: CSPResNet
   neck: CustomCSPPAN
-  yolo_head: PPYOLOEPromptHead1
+  yolo_head: PPYOLOEPromptHead
   post_process: ~
 
-PPYOLOEPromptHead1:
+PPYOLOEPromptHead:
   fpn_strides: [32, 16, 8]
   grid_cell_scale: 5.0
   grid_cell_offset: 0.5
@@ -59,7 +59,7 @@ PPYOLOEPromptHead1:
     nms_threshold: 0.7
 
 TrainReader:
-  batch_size: 8
+  batch_size: 2
 
 EvalReader:
-  batch_size: 8
+  batch_size: 2
