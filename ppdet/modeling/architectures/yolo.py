@@ -16,6 +16,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import copy
+
 from ppdet.core.workspace import register, create
 from .meta_arch import BaseArch
 from ..post_process import JDEBBoxPostProcess
@@ -78,7 +80,16 @@ class YOLOv3(BaseArch):
         }
 
     def _forward(self):
-        body_feats = self.backbone(self.inputs)
+        if self.inputs['image'].shape[1]==3:
+            body_feats = self.backbone(self.inputs)
+        else:
+            self.inputs1 = copy.deepcopy(self.inputs)
+            self.inputs2 = copy.deepcopy(self.inputs)
+            self.inputs1['image'] = self.inputs1['image'][:, :3]
+            self.inputs2['image'] = self.inputs2['image'][:, 3:]
+            feats1 = self.backbone(self.inputs1)
+            feats2 = self.backbone(self.inputs2)
+            body_feats = [f1+f2 for f1,f2 in zip(feats1, feats2)]
         if self.for_mot:
             neck_feats = self.neck(body_feats, self.for_mot)
         else:

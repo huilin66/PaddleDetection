@@ -26,7 +26,7 @@ except Exception:
     from collections import Sequence
 
 from numbers import Number, Integral
-
+from skimage import io
 import uuid
 import random
 import math
@@ -120,39 +120,42 @@ class Decode(BaseOperator):
 
     def apply(self, sample, context=None):
         """ load image if 'im_file' field is not empty but 'image' is"""
-        if 'image' not in sample:
-            with open(sample['im_file'], 'rb') as f:
-                sample['image'] = f.read()
-            sample.pop('im_file')
+        # if 'image' not in sample:
+        #     with open(sample['im_file'], 'rb') as f:
+        #         sample['image'] = f.read()
+        #     sample.pop('im_file')
+        #
+        # try:
+        #     im = sample['image']
+        #     data = np.frombuffer(im, dtype='uint8')
+        #     im = cv2.imdecode(data, 1)  # BGR mode, but need RGB mode
+        #     if 'keep_ori_im' in sample and sample['keep_ori_im']:
+        #         sample['ori_image'] = im
+        #     im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+        # except:
+        #     im = sample['image']
+        #
+        # sample['image'] = im
+        # if 'h' not in sample:
+        #     sample['h'] = im.shape[0]
+        # elif sample['h'] != im.shape[0]:
+        #     logger.warning(
+        #         "The actual image height: {} is not equal to the "
+        #         "height: {} in annotation, and update sample['h'] by actual "
+        #         "image height.".format(im.shape[0], sample['h']))
+        #     sample['h'] = im.shape[0]
+        # if 'w' not in sample:
+        #     sample['w'] = im.shape[1]
+        # elif sample['w'] != im.shape[1]:
+        #     logger.warning(
+        #         "The actual image width: {} is not equal to the "
+        #         "width: {} in annotation, and update sample['w'] by actual "
+        #         "image width.".format(im.shape[1], sample['w']))
+        #     sample['w'] = im.shape[1]
 
-        try:
-            im = sample['image']
-            data = np.frombuffer(im, dtype='uint8')
-            im = cv2.imdecode(data, 1)  # BGR mode, but need RGB mode
-            if 'keep_ori_im' in sample and sample['keep_ori_im']:
-                sample['ori_image'] = im
-            im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-        except:
-            im = sample['image']
-
+        im = io.imread(sample['im_file'])
+        sample.pop('im_file')
         sample['image'] = im
-        if 'h' not in sample:
-            sample['h'] = im.shape[0]
-        elif sample['h'] != im.shape[0]:
-            logger.warning(
-                "The actual image height: {} is not equal to the "
-                "height: {} in annotation, and update sample['h'] by actual "
-                "image height.".format(im.shape[0], sample['h']))
-            sample['h'] = im.shape[0]
-        if 'w' not in sample:
-            sample['w'] = im.shape[1]
-        elif sample['w'] != im.shape[1]:
-            logger.warning(
-                "The actual image width: {} is not equal to the "
-                "width: {} in annotation, and update sample['w'] by actual "
-                "image width.".format(im.shape[1], sample['w']))
-            sample['w'] = im.shape[1]
-
         sample['im_shape'] = np.array(im.shape[:2], dtype=np.float32)
         sample['scale_factor'] = np.array([1., 1.], dtype=np.float32)
         return sample
@@ -553,33 +556,88 @@ class RandomDistort(BaseOperator):
         if random.random() > self.prob:
             return sample
         img = sample['image']
-        img = Image.fromarray(img.astype(np.uint8))
-        if self.random_apply:
-            functions = [
-                self.apply_brightness, self.apply_contrast,
-                self.apply_saturation, self.apply_hue
-            ]
-            distortions = np.random.permutation(functions)[:self.count]
-            for func in distortions:
-                img = func(img)
-            img = np.asarray(img).astype(np.float32)
+        img1 = img[:,:,:3]
+        img2 = img[:,:,3:]
+        if img.shape[2]!=3:
+            img1 = Image.fromarray(img1.astype(np.uint8))
+            img2 = Image.fromarray(img2.astype(np.uint8))
+            if self.random_apply:
+                functions = [
+                    self.apply_brightness, self.apply_contrast,
+                    self.apply_saturation, self.apply_hue
+                ]
+                distortions = np.random.permutation(functions)[:self.count]
+                for func in distortions:
+                    img1 = func(img1)
+                    img2 = func(img2)
+                img1 = np.asarray(img1).astype(np.float32)
+                img2 = np.asarray(img2).astype(np.float32)
+                img = np.concatenate([img1, img2], axis=2)
+                sample['image'] = img
+                return sample
+
+            img1 = self.apply_brightness(img1)
+            img2 = self.apply_brightness(img2)
+            mode = np.random.randint(0, 2)
+            if mode:
+                img1 = self.apply_contrast(img1)
+                img2 = self.apply_contrast(img2)
+            img1 = self.apply_saturation(img1)
+            img2 = self.apply_saturation(img2)
+            img1 = self.apply_hue(img1)
+            img2 = self.apply_hue(img2)
+            if not mode:
+                img1 = self.apply_contrast(img1)
+                img2 = self.apply_contrast(img2)
+
+            img1 = np.asarray(img1).astype(np.float32)
+            img2 = np.asarray(img2).astype(np.float32)
+            if self.random_channel:
+                if np.random.randint(0, 2):
+                    img1 = img1[..., np.random.permutation(3)]
+                    img2 = img2[..., np.random.permutation(3)]
+            img = np.concatenate([img1, img2], axis=2)
             sample['image'] = img
-            return sample
+        else:
+            img1 = Image.fromarray(img1.astype(np.uint8))
+            img2 = Image.fromarray(img2.astype(np.uint8))
+            if self.random_apply:
+                functions = [
+                    self.apply_brightness, self.apply_contrast,
+                    self.apply_saturation, self.apply_hue
+                ]
+                distortions = np.random.permutation(functions)[:self.count]
+                for func in distortions:
+                    img1 = func(img1)
+                    img2 = func(img2)
+                img1 = np.asarray(img1).astype(np.float32)
+                img2 = np.asarray(img2).astype(np.float32)
+                img = np.concatenate([img1, img2], axis=2)
+                sample['image'] = img
+                return sample
 
-        img = self.apply_brightness(img)
-        mode = np.random.randint(0, 2)
-        if mode:
-            img = self.apply_contrast(img)
-        img = self.apply_saturation(img)
-        img = self.apply_hue(img)
-        if not mode:
-            img = self.apply_contrast(img)
+            img1 = self.apply_brightness(img1)
+            img2 = self.apply_brightness(img2)
+            mode = np.random.randint(0, 2)
+            if mode:
+                img1 = self.apply_contrast(img1)
+                img2 = self.apply_contrast(img2)
+            img1 = self.apply_saturation(img1)
+            img2 = self.apply_saturation(img2)
+            img1 = self.apply_hue(img1)
+            img2 = self.apply_hue(img2)
+            if not mode:
+                img1 = self.apply_contrast(img1)
+                img2 = self.apply_contrast(img2)
 
-        img = np.asarray(img).astype(np.float32)
-        if self.random_channel:
-            if np.random.randint(0, 2):
-                img = img[..., np.random.permutation(3)]
-        sample['image'] = img
+            img1 = np.asarray(img1).astype(np.float32)
+            img2 = np.asarray(img2).astype(np.float32)
+            if self.random_channel:
+                if np.random.randint(0, 2):
+                    img1 = img1[..., np.random.permutation(3)]
+                    img2 = img2[..., np.random.permutation(3)]
+            img = np.concatenate([img1, img2], axis=2)
+            sample['image'] = img
         return sample
 
 
@@ -844,14 +902,33 @@ class Resize(BaseOperator):
 
     def apply_image(self, image, scale):
         im_scale_x, im_scale_y = scale
-
-        return cv2.resize(
-            image,
-            None,
-            None,
-            fx=im_scale_x,
-            fy=im_scale_y,
-            interpolation=self.interp)
+        if image.shape[2]==3:
+            return cv2.resize(
+                image,
+                None,
+                None,
+                fx=im_scale_x,
+                fy=im_scale_y,
+                interpolation=self.interp)
+        else:
+            im1 = image[:,:,:3]
+            im2 = image[:,:,3:]
+            im1 = cv2.resize(
+                im1,
+                None,
+                None,
+                fx=im_scale_x,
+                fy=im_scale_y,
+                interpolation=self.interp)
+            im2 = cv2.resize(
+                im2,
+                None,
+                None,
+                fx=im_scale_x,
+                fy=im_scale_y,
+                interpolation=self.interp)
+            image = np.concatenate([im1, im2], axis=-1)
+            return image
 
     def apply_bbox(self, bbox, scale, size):
         im_scale_x, im_scale_y = scale
@@ -2313,31 +2390,66 @@ class Pad(BaseOperator):
     def apply(self, sample, context=None):
         im = sample['image']
         im_h, im_w = im.shape[:2]
-        if self.size:
-            h, w = self.size
-            assert (
-                im_h <= h and im_w <= w
-            ), '(h, w) of target size should be greater than (im_h, im_w)'
+
+        if im.shape[2] == 3:
+            if self.size:
+                h, w = self.size
+                assert (
+                        im_h <= h and im_w <= w
+                ), '(h, w) of target size should be greater than (im_h, im_w)'
+            else:
+                h = int(np.ceil(im_h / self.size_divisor) * self.size_divisor)
+                w = int(np.ceil(im_w / self.size_divisor) * self.size_divisor)
+
+            if h == im_h and w == im_w:
+                sample['image'] = im.astype(np.float32)
+                return sample
+
+            if self.pad_mode == -1:
+                offset_x, offset_y = self.offsets
+            elif self.pad_mode == 0:
+                offset_y, offset_x = 0, 0
+            elif self.pad_mode == 1:
+                offset_y, offset_x = (h - im_h) // 2, (w - im_w) // 2
+            else:
+                offset_y, offset_x = h - im_h, w - im_w
+
+            offsets, im_size, size = [offset_x, offset_y], [im_h, im_w], [h, w]
+
+            sample['image'] = self.apply_image(im, offsets, im_size, size)
         else:
-            h = int(np.ceil(im_h / self.size_divisor) * self.size_divisor)
-            w = int(np.ceil(im_w / self.size_divisor) * self.size_divisor)
+            im1 = im[:, :, :3]
+            im2 = im[:, :, 3:]
 
-        if h == im_h and w == im_w:
-            sample['image'] = im.astype(np.float32)
-            return sample
+            if self.size:
+                h, w = self.size
+                assert (
+                    im_h <= h and im_w <= w
+                ), '(h, w) of target size should be greater than (im_h, im_w)'
+            else:
+                h = int(np.ceil(im_h / self.size_divisor) * self.size_divisor)
+                w = int(np.ceil(im_w / self.size_divisor) * self.size_divisor)
 
-        if self.pad_mode == -1:
-            offset_x, offset_y = self.offsets
-        elif self.pad_mode == 0:
-            offset_y, offset_x = 0, 0
-        elif self.pad_mode == 1:
-            offset_y, offset_x = (h - im_h) // 2, (w - im_w) // 2
-        else:
-            offset_y, offset_x = h - im_h, w - im_w
+            if h == im_h and w == im_w:
+                sample['image'] = im.astype(np.float32)
+                return sample
 
-        offsets, im_size, size = [offset_x, offset_y], [im_h, im_w], [h, w]
+            if self.pad_mode == -1:
+                offset_x, offset_y = self.offsets
+            elif self.pad_mode == 0:
+                offset_y, offset_x = 0, 0
+            elif self.pad_mode == 1:
+                offset_y, offset_x = (h - im_h) // 2, (w - im_w) // 2
+            else:
+                offset_y, offset_x = h - im_h, w - im_w
 
-        sample['image'] = self.apply_image(im, offsets, im_size, size)
+            offsets, im_size, size = [offset_x, offset_y], [im_h, im_w], [h, w]
+
+            im1 = self.apply_image(im1, offsets, im_size, size)
+            im2 = self.apply_image(im2, offsets, im_size, size)
+
+            im = np.concatenate([im1, im2], axis=2)
+            sample['image'] = im
 
         if self.pad_mode == 0:
             return sample

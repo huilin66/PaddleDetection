@@ -1,0 +1,28 @@
+_BASE_: [
+  '../datasets/bdd_testdata5_w.yml',
+  '../runtime.yml',
+  './_base_/optimizer_80e.yml',
+  './_base_/ppyoloe_plus_crn.yml',
+  './_base_/ppyoloe_plus_reader.yml',
+]
+
+log_iter: 100
+snapshot_epoch: 5
+weights: output/ppyoloe_plus_crn_l_80e_coco/model_final
+
+pretrain_weights: https://bj.bcebos.com/v1/paddledet/models/pretrained/ppyoloe_crn_l_obj365_pretrained.pdparams
+depth_mult: 1.0
+width_mult: 1.0
+
+TrainReader:
+  batch_size: 6
+EvalReader:
+  batch_size: 6
+
+
+#TrainDataset:
+#  name: COCODataSet
+#  image_dir: images_val
+#  anno_path: annotations/instance_val.json
+#  dataset_dir: E:\data\0111_testdata\data_labeled4254\coco5_w
+#  allow_empty: true

@@ -1,0 +1,30 @@
+_BASE_: [
+  '../datasets/bdd_testdata5_wt.yml',
+  '../runtime.yml',
+  './_base_/optimizer_80e.yml',
+  './_base_/ppyoloe_plus_crn.yml',
+  './_base_/ppyoloe_plus_reader.yml',
+]
+epoch: 100
+log_iter: 10
+snapshot_epoch: 1
+weights: E:\Huilin\2308_concretespalling\code\output\ppyoloe_l_testdata5_w_pure\best_model.pdparams
+
+pretrain_weights: https://bj.bcebos.com/v1/paddledet/models/pretrained/ppyoloe_crn_l_obj365_pretrained.pdparams
+depth_mult: 1.0
+width_mult: 1.0
+
+
+LearningRate:
+  base_lr: 0.00005
+  schedulers:
+    - !CosineDecay
+      max_epochs: 96
+    - !LinearWarmup
+      start_factor: 0.
+      epochs: 5
+
+TrainReader:
+  batch_size: 6
+EvalReader:
+  batch_size: 6
