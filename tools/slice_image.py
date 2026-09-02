@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import argparse
+import os.path
+
 from tqdm import tqdm
 
 
@@ -32,6 +34,27 @@ def slice_data(image_dir, dataset_json_path, output_dir, slice_size,
         output_dir=output_dir,
         slice_size=slice_size,
         overlap_ratio=overlap_ratio, )
+
+    # from sahi.slicing import slice_image
+    # slice_image_result, num_total_invalid_segmentation = slice_image(
+    #     image=image_dir,
+    #     output_file_name=output_file_name,
+    #     output_dir=output_dir,
+    #     slice_height=slice_size,
+    #     slice_width=slice_size,
+    #     overlap_height_ratio=overlap_ratio,
+    #     overlap_width_ratio=overlap_ratio,
+    # )
+    # from sahi.slicing import slice_coco
+    # coco_dict, coco_path = slice_coco(
+    #     coco_annotation_file_path=dataset_json_path,
+    #     output_coco_annotation_file_name=os.path.join(output_dir, os.path.basename(dataset_json_path)),
+    #     image_dir=image_dir,
+    #     slice_height=slice_size,
+    #     slice_width=slice_size,
+    #     overlap_height_ratio=overlap_ratio,
+    #     overlap_width_ratio=overlap_ratio,
+    # )
 
 
 def main():

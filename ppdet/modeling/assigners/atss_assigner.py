@@ -221,5 +221,5 @@ class ATSSAssigner(nn.Layer):
             gather_scores = paddle.where(mask_positive_sum > 0, gather_scores,
                                          paddle.zeros_like(gather_scores))
             assigned_scores *= gather_scores.unsqueeze(-1)
-
+        # print(assigned_labels.shape, assigned_bboxes.shape, assigned_scores.shape)
         return assigned_labels, assigned_bboxes, assigned_scores

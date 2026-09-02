@@ -1,29 +1,6 @@
 _BASE_: [
-  '../datasets/defect.yml',
-  '../runtime.yml',
-  './_base_/optimizer_80e.yml',
-  './_base_/ppyoloe_plus_crn.yml',
-  './_base_/ppyoloe_plus_reader.yml',
+  './ppyoloe_l_80e_defect.yml',
 ]
-
-log_iter: 100
-snapshot_epoch: 5
-weights: output/ppyoloe_l_80e_defect_contrast/best_model
-
-pretrain_weights: https://bj.bcebos.com/v1/paddledet/models/pretrained/ppyoloe_crn_l_obj365_pretrained.pdparams
-depth_mult: 1.0
-width_mult: 1.0
-
-epoch: 100
-
-LearningRate:
-  base_lr: 0.0001
-  schedulers:
-    - !CosineDecay
-      max_epochs: 96
-    - !LinearWarmup
-      start_factor: 0.
-      epochs: 5
 
 YOLOv3:
   backbone: CSPResNet
@@ -57,6 +34,15 @@ PPYOLOEContrastHead:
     keep_top_k: 300
     score_threshold: 0.01
     nms_threshold: 0.7
+
+LearningRate:
+  base_lr: 0.0001
+  schedulers:
+    - !CosineDecay
+      max_epochs: 96
+    - !LinearWarmup
+      start_factor: 0.
+      epochs: 5
 
 TrainReader:
   batch_size: 8

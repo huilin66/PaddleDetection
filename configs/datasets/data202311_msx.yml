@@ -1,0 +1,23 @@
+dataset_path: &dataset_path /mnt/e/data/polyu/data202311/msx_2x_coco/
+
+metric: COCO
+num_classes: 2
+
+TrainDataset:
+  name: COCODataSet
+  image_dir: train
+  anno_path: annotations/instance_train.json
+  dataset_dir: *dataset_path
+  data_fields: ['image', 'gt_bbox', 'gt_class', 'is_crowd']
+
+EvalDataset:
+  name: COCODataSet
+  image_dir: val
+  anno_path: annotations/instance_val.json
+  dataset_dir: *dataset_path
+  allow_empty: true
+
+TestDataset:
+  name: ImageFolder
+  anno_path: valid/_annotations.coco.json # also support txt (like VOC's label_list.txt)
+  dataset_dir: *dataset_path

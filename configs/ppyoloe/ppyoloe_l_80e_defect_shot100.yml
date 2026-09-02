@@ -1,0 +1,4 @@
+_BASE_: [
+  './ppyoloe_l_80e_defect.yml',
+  '../datasets/defect_shot100.yml',
+]

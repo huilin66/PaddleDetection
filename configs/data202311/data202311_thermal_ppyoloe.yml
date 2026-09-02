@@ -1,0 +1,4 @@
+_BASE_: [
+  './ppyoloe_l.yml',
+  '../datasets/data202311_thermal.yml',
+]

@@ -389,7 +389,7 @@ class PPYOLOEHead(nn.Layer):
         pad_gt_mask = gt_meta['pad_gt_mask']
         # label assignment
         if gt_meta['epoch_id'] < self.static_assigner_epoch:
-            assigned_labels, assigned_bboxes, assigned_scores = \
+            data = \
                 self.static_assigner(
                     anchors,
                     num_anchors_list,
@@ -398,6 +398,10 @@ class PPYOLOEHead(nn.Layer):
                     pad_gt_mask,
                     bg_index=self.num_classes,
                     pred_bboxes=pred_bboxes.detach() * stride_tensor)
+            if len(data)==3:
+                assigned_labels, assigned_bboxes, assigned_scores = data
+            else:
+                assigned_labels, assigned_bboxes, assigned_scores,_ =data
             alpha_l = 0.25
         else:
             if self.sm_use:

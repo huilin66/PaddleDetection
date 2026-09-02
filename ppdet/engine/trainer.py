@@ -969,6 +969,13 @@ class Trainer(object):
         anno_file = self.dataset.get_anno()
         clsid2catid, catid2name = get_categories(
             self.cfg.metric, anno_file=anno_file)
+        catid2name[0] = 'background'
+        catid2name[1] = 'crack'
+        catid2name[2] = 'mold'
+        catid2name[3] = 'peeling_paint'
+        catid2name[4] = 'stairstep_crack'
+        catid2name[5] = 'water_seepage'
+        catid2name[6] = 'spall'
 
         # Run Infer 
         self.status['mode'] = 'test'

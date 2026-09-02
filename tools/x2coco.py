@@ -137,6 +137,8 @@ def deal_json(ds_type, img_path, json_path):
                 -1] not in ['bmp', 'jpg', 'jpeg', 'png', 'JPEG', 'JPG', 'PNG']:
             continue
         label_file = osp.join(json_path, img_label + '.json')
+        if not os.path.exists(label_file):
+            continue
         print('Generating dataset from:', label_file)
         image_num = image_num + 1
         with open(label_file) as f:
